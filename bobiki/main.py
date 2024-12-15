@@ -67,7 +67,11 @@ class Player:
         else:
             screen.blit(self.image, self.rect)
 
-    def move(self, keys):
+    def move(self, keys, game_phase):
+        if game_phase == GAME_OVER:
+            self.is_moving = False  # Ensure is_moving is set to False
+            return  # Stop moving if the game is over
+
         old_pos = self.rect.copy()
         self.is_moving = False
 
@@ -88,8 +92,25 @@ class Player:
 
         self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
 
+class Fireball:
+    def __init__(self, x, y, speed, image, vertical_speed=0):
+        self.rect = pygame.Rect(x, y, 30, 30)
+        self.speed = speed
+        self.vertical_speed = vertical_speed
+        self.image = image
+        self.angle = 0  # Initialize rotation angle
+
+    def move(self):
+        self.rect.x -= self.speed
+        self.rect.y += self.vertical_speed
+        self.angle += 10  # Increase the angle increment for faster rotation
+
+    def draw(self, screen):
+        rotated_image = pygame.transform.rotate(self.image, self.angle)
+        screen.blit(rotated_image, self.rect)
+
 class Dragon:
-    def __init__(self, image, heart_image):
+    def __init__(self, image, heart_image, fireball_img):
         self.image = pygame.transform.scale(image, (200, 200))
         self.rect = self.image.get_rect(x=WIDTH - 200, y=100)
         self.speed = 3
@@ -99,26 +120,32 @@ class Dragon:
         self.fireballs = []
         self.last_fireball_time = 0
         self.fireball_delay = random.randint(800, 2200)
+        self.fireball_img = fireball_img
+        self.vertical_speed = 0
 
-    def move(self):
+    def move(self, game_phase):
+        if game_phase == GAME_OVER:
+            return  # Stop moving if the game is over
+
         self.rect.y += self.speed * self.direction
+        self.vertical_speed = self.speed * self.direction
         if self.rect.bottom >= HEIGHT or self.rect.top <= 0:
             self.direction *= -1
 
     def shoot_fireball(self):
-        fireball = pygame.Rect(self.rect.left, self.rect.centery, 30, 30)
+        fireball = Fireball(self.rect.left, self.rect.centery, FIREBALL_SPEED, self.fireball_img, self.vertical_speed)
         self.fireballs.append(fireball)
 
     def update_fireballs(self):
         for fireball in self.fireballs[:]:
-            fireball.x -= FIREBALL_SPEED
-            if fireball.right < 0:
+            fireball.move()
+            if fireball.rect.right < 0:
                 self.fireballs.remove(fireball)
 
-    def draw(self, screen, fireball_img):
+    def draw(self, screen):
         screen.blit(self.image, self.rect)
         for fireball in self.fireballs:
-            screen.blit(fireball_img, fireball)
+            fireball.draw(screen)
 
     def draw_hearts(self, screen):
         heart_spacing = 35
@@ -147,14 +174,12 @@ class Game:
         self.heart_img = pygame.transform.scale(self.heart_img, (30, 30))
 
         self.dragon_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/dragon.png"))
-        
         self.fireball_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/fireball.png"))
         self.fireball_img = pygame.transform.scale(self.fireball_img, (30, 30))
-
         self.dragon_heart_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/dragon-heart.png"))
         self.sound_manager = SoundManager()
         self.player = Player(pygame.image.load(os.path.join(ASSETS_DIR, "images/player3.png")))
-        self.dragon = Dragon(self.dragon_img, self.dragon_heart_img)
+        self.dragon = Dragon(self.dragon_img, self.dragon_heart_img, self.fireball_img)
         self.enemies = [
             {"type": "zombie", "health": 10, "damage": 3, "position": (250, 350)},
             {"type": "orc", "health": 20, "damage": 5, "position": (500, 450)},
@@ -162,18 +187,24 @@ class Game:
         self.boss = {"type": "mag", "health": 50, "damage": 10, "position": (WIDTH // 2 - 50, 100)}
         self.game_phase = WELCOME_SCREEN
 
-    def draw_text(self, text, x, y, color=WHITE):
+    def draw_text(self, text, x, y, color=WHITE, with_frame=False):
         rendered_text = self.font.render(text, True, color)
-        self.screen.blit(rendered_text, (x, y))
+        text_rect = rendered_text.get_rect(topleft=(x, y))
+        
+        if with_frame:
+            # Draw a rectangle around the text
+            pygame.draw.rect(self.screen, WHITE, text_rect.inflate(10, 10), 2)  # 2 is the border thickness
+        
+        self.screen.blit(rendered_text, text_rect)
 
     def draw_castle(self):
         self.screen.blit(self.castle_img, (WIDTH // 2 - 100, HEIGHT // 2 - 200))
-        self.draw_text("Zamek: Kliknij, aby wejść", WIDTH // 2 - 100, HEIGHT // 2 - 230)
+        self.draw_text("Zamek: Kliknij, aby wejść", WIDTH // 2 - 100, HEIGHT // 2 - 230, with_frame=True)
 
     def draw_fortresses(self):
         for pos in [(200, 300), (400, 400), (600, 200)]:
             self.screen.blit(self.fortress_img, pos)
-        self.draw_text("Fortece: Kliknij, aby walczyć", 10, 10)
+        self.draw_text("Fortece: Kliknij, aby walczyć", 10, 10, with_frame=True)
 
     def draw_enemies(self):
         for enemy in self.enemies:
@@ -217,15 +248,24 @@ class Game:
         overlay.fill(BLACK)
         overlay.set_alpha(128)
         self.screen.blit(overlay, (0, 0))
-        title_text = self.title_font.render("Bobik walczy ze smokiem", True, WHITE)
+        title_text = self.title_font.render("Bobik fights the dragon", True, WHITE)
         title_rect = title_text.get_rect(center=(WIDTH//2, HEIGHT//3))
         self.screen.blit(title_text, title_rect)
-        start_text = self.font.render("Kliknij, aby rozpocząć grę", True, WHITE)
+        start_text = self.font.render("Click to start", True, WHITE)
         start_rect = start_text.get_rect(center=(WIDTH//2, HEIGHT*2//3))
+        pygame.draw.rect(self.screen, WHITE, start_rect.inflate(10, 10), 2)  # Add frame around the button
         self.screen.blit(start_text, start_rect)
+        
+        # Change cursor to pointer if mouse is over the text
+        if start_rect.collidepoint(pygame.mouse.get_pos()):
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+        else:
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+        
         return start_rect
 
     def draw_game_over_screen(self):
+        self.screen.blit(pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0))
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.fill(BLACK)
         overlay.set_alpha(192)
@@ -233,12 +273,22 @@ class Game:
         game_over_text = self.title_font.render("GAME OVER", True, RED)
         game_over_rect = game_over_text.get_rect(center=(WIDTH//2, HEIGHT//3))
         self.screen.blit(game_over_text, game_over_rect)
+        
         restart_text = self.font.render("Click to Play Again", True, WHITE)
         restart_rect = restart_text.get_rect(center=(WIDTH//2, HEIGHT*2//3))
+        pygame.draw.rect(self.screen, WHITE, restart_rect.inflate(10, 10), 2)  # Add frame around the button
         self.screen.blit(restart_text, restart_rect)
+        
+        # Change cursor to pointer if mouse is over the text
+        if restart_rect.collidepoint(pygame.mouse.get_pos()):
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+        else:
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+        
         return restart_rect
 
     def draw_victory_screen(self):
+        self.screen.blit(pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0))
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.fill(BLACK)
         overlay.set_alpha(192)
@@ -249,6 +299,13 @@ class Game:
         restart_text = self.font.render("Click to Play Again", True, WHITE)
         restart_rect = restart_text.get_rect(center=(WIDTH//2, HEIGHT*2//3))
         self.screen.blit(restart_text, restart_rect)
+        
+        # Change cursor to pointer if mouse is over the text
+        if restart_rect.collidepoint(pygame.mouse.get_pos()):
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+        else:
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+        
         return restart_rect
 
     def reset_game(self):
@@ -309,7 +366,7 @@ class Game:
 
             if self.game_phase == EXPLORE:
                 keys = pygame.key.get_pressed()
-                self.player.move(keys)
+                self.player.move(keys, self.game_phase)
                 current_time = pygame.time.get_ticks()
                 if current_time - self.dragon.last_fireball_time > self.dragon.fireball_delay:
                     self.dragon.shoot_fireball()
@@ -329,16 +386,16 @@ class Game:
             elif self.game_phase == EXPLORE:
                 self.screen.blit(self.background_img, (0, 0))
                 self.player.draw(self.screen)
-                self.dragon.move()
+                self.dragon.move(self.game_phase)
                 self.dragon.update_fireballs()
-                self.dragon.draw(self.screen, self.fireball_img)
+                self.dragon.draw(self.screen)
                 self.dragon.draw_hearts(self.screen)
                 self.draw_player_lives()
                 for fireball in self.dragon.fireballs[:]:
-                    if self.player.rect.colliderect(fireball):
+                    if self.player.rect.colliderect(fireball.rect):
                         self.dragon.fireballs.remove(fireball)
                         self.player.lives -= 1
-                        self.player.rect.center = PLAYER_START_POSITION
+                        self.player.rect.center = (50, HEIGHT // 2)
                         self.sound_manager.play_sound(self.sound_manager.hit_sound)
                         flash_surface = pygame.Surface((WIDTH, HEIGHT))
                         flash_surface.fill((255, 0, 0))
@@ -349,7 +406,7 @@ class Game:
                         if self.player.lives <= 0:
                             self.game_phase = GAME_OVER
                         else:
-                            self.player.rect.center = (WIDTH // 2, HEIGHT // 2)
+                            self.player.rect.center = (50, HEIGHT // 2)
             elif self.game_phase == FIGHT:
                 self.draw_enemies()
                 self.handle_fight()
@@ -362,6 +419,8 @@ class Game:
                 self.draw_text("W zamku: Naciśnij U, aby ulepszyć broń", 10, 10)
             elif self.game_phase == GAME_OVER:
                 self.draw_game_over_screen()
+                self.sound_manager.stop_sound(self.sound_manager.footsteps_sound)
+                self.sound_manager.stop_sound(self.sound_manager.explore_music)
             elif self.game_phase == GAME_WON:
                 self.draw_victory_screen()
 
