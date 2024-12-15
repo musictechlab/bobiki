@@ -154,22 +154,14 @@ class Dragon:
         for i in range(self.health):
             screen.blit(self.heart_image, (start_x + (i * heart_spacing), start_y))
 
-class ScreenManager:
+class WelcomeScreen:
     def __init__(self, screen, fonts, images):
         self.screen = screen
         self.font = fonts['font']
         self.title_font = fonts['title_font']
         self.castle_img = images['castle_img']
-        self.heart_img = images['heart_img']
 
-    def draw_text(self, text, x, y, color=WHITE, with_frame=False):
-        rendered_text = self.font.render(text, True, color)
-        text_rect = rendered_text.get_rect(topleft=(x, y))
-        if with_frame:
-            pygame.draw.rect(self.screen, WHITE, text_rect.inflate(10, 10), 2)
-        self.screen.blit(rendered_text, text_rect)
-
-    def draw_welcome_screen(self):
+    def draw(self):
         self.screen.blit(pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0))
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.fill(BLACK)
@@ -188,7 +180,14 @@ class ScreenManager:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         return start_rect
 
-    def draw_game_over_screen(self):
+class GameOverScreen:
+    def __init__(self, screen, fonts, images):
+        self.screen = screen
+        self.font = fonts['font']
+        self.title_font = fonts['title_font']
+        self.castle_img = images['castle_img']
+
+    def draw(self):
         self.screen.blit(pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0))
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.fill(BLACK)
@@ -207,7 +206,14 @@ class ScreenManager:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         return restart_rect
 
-    def draw_victory_screen(self):
+class VictoryScreen:
+    def __init__(self, screen, fonts, images):
+        self.screen = screen
+        self.font = fonts['font']
+        self.title_font = fonts['title_font']
+        self.castle_img = images['castle_img']
+
+    def draw(self):
         self.screen.blit(pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0))
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.fill(BLACK)
@@ -224,6 +230,22 @@ class ScreenManager:
         else:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         return restart_rect
+
+class ScreenManager:
+    def __init__(self, screen, fonts, images):
+        self.screen = screen
+        self.welcome_screen = WelcomeScreen(screen, fonts, images)
+        self.game_over_screen = GameOverScreen(screen, fonts, images)
+        self.victory_screen = VictoryScreen(screen, fonts, images)
+        self.font = fonts['font']
+        self.heart_img = images['heart_img']
+
+    def draw_text(self, text, x, y, color=WHITE, with_frame=False):
+        rendered_text = self.font.render(text, True, color)
+        text_rect = rendered_text.get_rect(topleft=(x, y))
+        if with_frame:
+            pygame.draw.rect(self.screen, WHITE, text_rect.inflate(10, 10), 2)
+        self.screen.blit(rendered_text, text_rect)
 
     def draw_player_lives(self, player_lives):
         heart_spacing = 35
@@ -337,16 +359,16 @@ class Game:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     x, y = event.pos
                     if self.game_phase == WELCOME_SCREEN:
-                        start_rect = self.screen_manager.draw_welcome_screen()
+                        start_rect = self.screen_manager.welcome_screen.draw()
                         if start_rect.collidepoint(x, y):
                             self.game_phase = EXPLORE
                             self.sound_manager.play_sound(self.sound_manager.explore_music)
                     if self.game_phase == GAME_OVER:
-                        restart_rect = self.screen_manager.draw_game_over_screen()
+                        restart_rect = self.screen_manager.game_over_screen.draw()
                         if restart_rect.collidepoint(x, y):
                             self.reset_game()
                     if self.game_phase == GAME_WON:
-                        restart_rect = self.screen_manager.draw_victory_screen()
+                        restart_rect = self.screen_manager.victory_screen.draw()
                         if restart_rect.collidepoint(x, y):
                             self.reset_game()
                 if event.type == pygame.KEYDOWN:
@@ -378,7 +400,7 @@ class Game:
                 self.screen_manager.draw_player_lives(self.player.lives)
 
             if self.game_phase == WELCOME_SCREEN:
-                self.screen_manager.draw_welcome_screen()
+                self.screen_manager.welcome_screen.draw()
             elif self.game_phase == EXPLORE:
                 self.screen.blit(self.background_img, (0, 0))
                 self.player.draw(self.screen)
@@ -414,11 +436,11 @@ class Game:
             elif self.game_phase == CASTLE_TASKS:
                 self.screen_manager.draw_text("W zamku: Naciśnij U, aby ulepszyć broń", 10, 10)
             elif self.game_phase == GAME_OVER:
-                self.screen_manager.draw_game_over_screen()
+                self.screen_manager.game_over_screen.draw()
                 self.sound_manager.stop_sound(self.sound_manager.footsteps_sound)
                 self.sound_manager.stop_sound(self.sound_manager.explore_music)
             elif self.game_phase == GAME_WON:
-                self.screen_manager.draw_victory_screen()
+                self.screen_manager.victory_screen.draw()
 
             pygame.display.flip()
             self.clock.tick(30)
