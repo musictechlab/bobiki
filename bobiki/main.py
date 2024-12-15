@@ -53,6 +53,7 @@ class SoundManager:
 class Player:
     def __init__(self, image):
         self.image = pygame.transform.scale(image, (100, 100))
+        self.original_image = self.image  # Store the original image for rotation
         self.rect = self.image.get_rect(center=(100, HEIGHT // 2))
         self.health = 20
         self.damage = 5
@@ -60,17 +61,29 @@ class Player:
         self.facing_left = False
         self.is_moving = False
         self.footsteps_timer = 0
+        self.angle = 0  # Initialize rotation angle
+        self.angle_reset_time = None  # Timer for resetting angle
+        self.grass_top = 140  # Define the top boundary of the grass
+        self.grass_bottom = 450  # Define the bottom boundary of the grass
 
     def draw(self, screen):
+        rotated_image = pygame.transform.rotate(self.original_image, self.angle)
+        new_rect = rotated_image.get_rect(center=self.rect.center)
         if self.facing_left:
-            screen.blit(pygame.transform.flip(self.image, True, False), self.rect)
+            screen.blit(pygame.transform.flip(rotated_image, True, False), new_rect)
         else:
-            screen.blit(self.image, self.rect)
+            screen.blit(rotated_image, new_rect)
+
+    def update(self):
+        # Reset angle if the timer has expired
+        if self.angle_reset_time and pygame.time.get_ticks() > self.angle_reset_time:
+            self.angle = 0
+            self.angle_reset_time = None
 
     def move(self, keys, game_phase):
         if game_phase == GAME_OVER:
-            self.is_moving = False  # Ensure is_moving is set to False
-            return  # Stop moving if the game is over
+            self.is_moving = False
+            return
 
         old_pos = self.rect.copy()
         self.is_moving = False
@@ -89,6 +102,12 @@ class Player:
         if keys[pygame.K_DOWN]:
             self.rect.y += PLAYER_SPEED
             self.is_moving = True
+
+        # Restrict vertical movement to the grass area
+        if self.rect.top < self.grass_top:
+            self.rect.top = self.grass_top
+        if self.rect.bottom > self.grass_bottom:
+            self.rect.bottom = self.grass_bottom
 
         self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
 
@@ -374,11 +393,16 @@ class Game:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         self.sound_manager.play_sound(self.sound_manager.sword_sound)
+                        self.player.angle += 15  # Rotate the player by 15 degrees
                         if self.player.rect.colliderect(self.dragon.rect):
                             self.dragon.health -= 1
                             if self.dragon.health <= 0:
                                 self.game_phase = GAME_WON
-                    if self.game_phase == CASTLE_TASKS and event.key == pygame.K_u:
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        self.player.angle = 0  # Reset the player's angle when space is released
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_u:
                         message = self.upgrade_weapon()
                         print(message)
 
@@ -441,6 +465,7 @@ class Game:
                 self.sound_manager.stop_sound(self.sound_manager.explore_music)
             elif self.game_phase == GAME_WON:
                 self.screen_manager.victory_screen.draw()
+                self.sound_manager.stop_sound(self.sound_manager.footsteps_sound)
 
             pygame.display.flip()
             self.clock.tick(30)
