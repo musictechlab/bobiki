@@ -1,7 +1,8 @@
-import pygame
+import os
 import random
 import sys
-import os
+
+import pygame
 
 # Constants
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
@@ -25,13 +26,16 @@ FIREBALL_SPEED = 10
 pygame.init()
 pygame.mixer.init(44100, -16, 2, 2048)
 
+
 class SoundManager:
     def __init__(self):
         self.explore_music = self.load_sound("music/explore.wav", 0.1)
         self.footsteps_sound = self.load_sound("music/player/footsteps.mp3", 0.6)
         self.hit_sound = self.load_sound("music/hit.wav", 0.3)
         self.sword_sound = self.load_sound("music/sword.wav", 0.4)
-        self.footsteps_channel = pygame.mixer.Channel(1) if self.footsteps_sound else None
+        self.footsteps_channel = (
+            pygame.mixer.Channel(1) if self.footsteps_sound else None
+        )
 
     def load_sound(self, path, volume):
         try:
@@ -49,6 +53,7 @@ class SoundManager:
     def stop_sound(self, sound):
         if sound:
             sound.stop()
+
 
 class Player:
     def __init__(self, image):
@@ -111,6 +116,7 @@ class Player:
 
         self.rect.clamp_ip(pygame.Rect(0, 0, WIDTH, HEIGHT))
 
+
 class Fireball:
     def __init__(self, x, y, speed, image, vertical_speed=0):
         self.rect = pygame.Rect(x, y, 30, 30)
@@ -127,6 +133,7 @@ class Fireball:
     def draw(self, screen):
         rotated_image = pygame.transform.rotate(self.image, self.angle)
         screen.blit(rotated_image, self.rect)
+
 
 class Dragon:
     def __init__(self, image, heart_image, fireball_img):
@@ -152,7 +159,13 @@ class Dragon:
             self.direction *= -1
 
     def shoot_fireball(self):
-        fireball = Fireball(self.rect.left, self.rect.centery, FIREBALL_SPEED, self.fireball_img, self.vertical_speed)
+        fireball = Fireball(
+            self.rect.left,
+            self.rect.centery,
+            FIREBALL_SPEED,
+            self.fireball_img,
+            self.vertical_speed,
+        )
         self.fireballs.append(fireball)
 
     def update_fireballs(self):
@@ -173,24 +186,27 @@ class Dragon:
         for i in range(self.health):
             screen.blit(self.heart_image, (start_x + (i * heart_spacing), start_y))
 
+
 class WelcomeScreen:
     def __init__(self, screen, fonts, images):
         self.screen = screen
-        self.font = fonts['font']
-        self.title_font = fonts['title_font']
-        self.castle_img = images['castle_img']
+        self.font = fonts["font"]
+        self.title_font = fonts["title_font"]
+        self.castle_img = images["castle_img"]
 
     def draw(self):
-        self.screen.blit(pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0))
+        self.screen.blit(
+            pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0)
+        )
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.fill(BLACK)
         overlay.set_alpha(128)
         self.screen.blit(overlay, (0, 0))
         title_text = self.title_font.render("Bobik fights the dragon", True, WHITE)
-        title_rect = title_text.get_rect(center=(WIDTH//2, HEIGHT//3))
+        title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
         self.screen.blit(title_text, title_rect)
         start_text = self.font.render("Click to start", True, WHITE)
-        start_rect = start_text.get_rect(center=(WIDTH//2, HEIGHT*2//3))
+        start_rect = start_text.get_rect(center=(WIDTH // 2, HEIGHT * 2 // 3))
         pygame.draw.rect(self.screen, WHITE, start_rect.inflate(10, 10), 2)
         self.screen.blit(start_text, start_rect)
         if start_rect.collidepoint(pygame.mouse.get_pos()):
@@ -199,24 +215,27 @@ class WelcomeScreen:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         return start_rect
 
+
 class GameOverScreen:
     def __init__(self, screen, fonts, images):
         self.screen = screen
-        self.font = fonts['font']
-        self.title_font = fonts['title_font']
-        self.castle_img = images['castle_img']
+        self.font = fonts["font"]
+        self.title_font = fonts["title_font"]
+        self.castle_img = images["castle_img"]
 
     def draw(self):
-        self.screen.blit(pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0))
+        self.screen.blit(
+            pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0)
+        )
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.fill(BLACK)
         overlay.set_alpha(192)
         self.screen.blit(overlay, (0, 0))
         game_over_text = self.title_font.render("GAME OVER", True, RED)
-        game_over_rect = game_over_text.get_rect(center=(WIDTH//2, HEIGHT//3))
+        game_over_rect = game_over_text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
         self.screen.blit(game_over_text, game_over_rect)
         restart_text = self.font.render("Click to Play Again", True, WHITE)
-        restart_rect = restart_text.get_rect(center=(WIDTH//2, HEIGHT*2//3))
+        restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT * 2 // 3))
         pygame.draw.rect(self.screen, WHITE, restart_rect.inflate(10, 10), 2)
         self.screen.blit(restart_text, restart_rect)
         if restart_rect.collidepoint(pygame.mouse.get_pos()):
@@ -225,24 +244,27 @@ class GameOverScreen:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         return restart_rect
 
+
 class VictoryScreen:
     def __init__(self, screen, fonts, images):
         self.screen = screen
-        self.font = fonts['font']
-        self.title_font = fonts['title_font']
-        self.castle_img = images['castle_img']
+        self.font = fonts["font"]
+        self.title_font = fonts["title_font"]
+        self.castle_img = images["castle_img"]
 
     def draw(self):
-        self.screen.blit(pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0))
+        self.screen.blit(
+            pygame.transform.scale(self.castle_img, (WIDTH, HEIGHT)), (0, 0)
+        )
         overlay = pygame.Surface((WIDTH, HEIGHT))
         overlay.fill(BLACK)
         overlay.set_alpha(192)
         self.screen.blit(overlay, (0, 0))
         victory_text = self.title_font.render("YOU WON!", True, GREEN)
-        victory_rect = victory_text.get_rect(center=(WIDTH//2, HEIGHT//3))
+        victory_rect = victory_text.get_rect(center=(WIDTH // 2, HEIGHT // 3))
         self.screen.blit(victory_text, victory_rect)
         restart_text = self.font.render("Click to Play Again", True, WHITE)
-        restart_rect = restart_text.get_rect(center=(WIDTH//2, HEIGHT*2//3))
+        restart_rect = restart_text.get_rect(center=(WIDTH // 2, HEIGHT * 2 // 3))
         self.screen.blit(restart_text, restart_rect)
         if restart_rect.collidepoint(pygame.mouse.get_pos()):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
@@ -250,14 +272,15 @@ class VictoryScreen:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
         return restart_rect
 
+
 class ScreenManager:
     def __init__(self, screen, fonts, images):
         self.screen = screen
         self.welcome_screen = WelcomeScreen(screen, fonts, images)
         self.game_over_screen = GameOverScreen(screen, fonts, images)
         self.victory_screen = VictoryScreen(screen, fonts, images)
-        self.font = fonts['font']
-        self.heart_img = images['heart_img']
+        self.font = fonts["font"]
+        self.heart_img = images["heart_img"]
 
     def draw_text(self, text, x, y, color=WHITE, with_frame=False):
         rendered_text = self.font.render(text, True, color)
@@ -273,6 +296,7 @@ class ScreenManager:
         for i in range(player_lives):
             self.screen.blit(self.heart_img, (start_x + (i * heart_spacing), start_y))
 
+
 class Game:
     def __init__(self):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -280,32 +304,58 @@ class Game:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 36)
         self.title_font = pygame.font.Font(None, 74)
-        self.background_img = pygame.transform.scale(pygame.image.load(os.path.join(ASSETS_DIR, "images/background.png")), (WIDTH, HEIGHT))
-        self.castle_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/castle.png"))
-        self.fortress_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/fortress.png"))
-        self.zombie_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/zombie.png"))
+        self.background_img = pygame.transform.scale(
+            pygame.image.load(os.path.join(ASSETS_DIR, "images/background.png")),
+            (WIDTH, HEIGHT),
+        )
+        self.castle_img = pygame.image.load(
+            os.path.join(ASSETS_DIR, "images/castle.png")
+        )
+        self.fortress_img = pygame.image.load(
+            os.path.join(ASSETS_DIR, "images/fortress.png")
+        )
+        self.zombie_img = pygame.image.load(
+            os.path.join(ASSETS_DIR, "images/zombie.png")
+        )
         self.orc_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/orc.png"))
         self.boss_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/boss.png"))
         self.coin_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/coin.png"))
         self.sword_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/sword.png"))
-        
+
         self.heart_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/heart.png"))
         self.heart_img = pygame.transform.scale(self.heart_img, (30, 30))
 
-        self.dragon_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/dragon.png"))
-        self.fireball_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/fireball.png"))
+        self.dragon_img = pygame.image.load(
+            os.path.join(ASSETS_DIR, "images/dragon.png")
+        )
+        self.fireball_img = pygame.image.load(
+            os.path.join(ASSETS_DIR, "images/fireball.png")
+        )
         self.fireball_img = pygame.transform.scale(self.fireball_img, (30, 30))
-        self.dragon_heart_img = pygame.image.load(os.path.join(ASSETS_DIR, "images/dragon-heart.png"))
+        self.dragon_heart_img = pygame.image.load(
+            os.path.join(ASSETS_DIR, "images/dragon-heart.png")
+        )
         self.sound_manager = SoundManager()
-        self.player = Player(pygame.image.load(os.path.join(ASSETS_DIR, "images/player3.png")))
+        self.player = Player(
+            pygame.image.load(os.path.join(ASSETS_DIR, "images/player3.png"))
+        )
         self.dragon = Dragon(self.dragon_img, self.dragon_heart_img, self.fireball_img)
         self.enemies = [
             {"type": "zombie", "health": 10, "damage": 3, "position": (250, 350)},
             {"type": "orc", "health": 20, "damage": 5, "position": (500, 450)},
         ]
-        self.boss = {"type": "mag", "health": 50, "damage": 10, "position": (WIDTH // 2 - 50, 100)}
+        self.boss = {
+            "type": "mag",
+            "health": 50,
+            "damage": 10,
+            "position": (WIDTH // 2 - 50, 100),
+        }
         self.game_phase = WELCOME_SCREEN
-        self.screen_manager = ScreenManager(self.screen, {'font': self.font, 'title_font': self.title_font}, {'castle_img': self.castle_img, 'heart_img': self.heart_img})
+        self.screen_manager = ScreenManager(
+            self.screen,
+            {"font": self.font, "title_font": self.title_font},
+            {"castle_img": self.castle_img, "heart_img": self.heart_img},
+        )
 
     def draw_enemies(self):
         for enemy in self.enemies:
@@ -325,7 +375,7 @@ class Game:
                 self.enemies.remove(enemy)
         if self.player.health <= 0:
             self.player.lives -= 1
-            
+
             if self.player.lives <= 0:
                 self.game_phase = GAME_OVER
             else:
@@ -337,7 +387,9 @@ class Game:
         self.player.health -= self.boss["damage"]
         self.boss["health"] -= self.player.damage
         if self.boss["health"] <= 0:
-            self.screen_manager.draw_text("Pokonałeś bossa! Gratulacje!", WIDTH // 2 - 100, HEIGHT // 2 - 50)
+            self.screen_manager.draw_text(
+                "Pokonałeś bossa! Gratulacje!", WIDTH // 2 - 100, HEIGHT // 2 - 50
+            )
             self.game_phase = "explore"
 
     def reset_game(self):
@@ -350,7 +402,12 @@ class Game:
             {"type": "zombie", "health": 10, "damage": 3, "position": (250, 350)},
             {"type": "orc", "health": 20, "damage": 5, "position": (500, 450)},
         ]
-        self.boss = {"type": "mag", "health": 50, "damage": 10, "position": (WIDTH // 2 - 50, 100)}
+        self.boss = {
+            "type": "mag",
+            "health": 50,
+            "damage": 10,
+            "position": (WIDTH // 2 - 50, 100),
+        }
         self.dragon.fireballs.clear()
         self.game_phase = EXPLORE
         self.sound_manager.stop_sound(self.sound_manager.explore_music)
@@ -369,7 +426,9 @@ class Game:
                         start_rect = self.screen_manager.welcome_screen.draw()
                         if start_rect.collidepoint(x, y):
                             self.game_phase = EXPLORE
-                            self.sound_manager.play_sound(self.sound_manager.explore_music)
+                            self.sound_manager.play_sound(
+                                self.sound_manager.explore_music
+                            )
                     if self.game_phase == GAME_OVER:
                         restart_rect = self.screen_manager.game_over_screen.draw()
                         if restart_rect.collidepoint(x, y):
@@ -388,7 +447,9 @@ class Game:
                                 self.game_phase = GAME_WON
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_SPACE:
-                        self.player.angle = 0  # Reset the player's angle when space is released
+                        self.player.angle = (
+                            0  # Reset the player's angle when space is released
+                        )
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_u:
                         message = self.upgrade_weapon()
@@ -398,14 +459,22 @@ class Game:
                 keys = pygame.key.get_pressed()
                 self.player.move(keys, self.game_phase)
                 current_time = pygame.time.get_ticks()
-                if current_time - self.dragon.last_fireball_time > self.dragon.fireball_delay:
+                if (
+                    current_time - self.dragon.last_fireball_time
+                    > self.dragon.fireball_delay
+                ):
                     self.dragon.shoot_fireball()
                     self.dragon.last_fireball_time = current_time
                     self.dragon.fireball_delay = random.randint(1000, 2000)
                 if self.player.is_moving and self.sound_manager.footsteps_sound:
                     if current_time - self.player.footsteps_timer >= 300:
-                        if self.sound_manager.footsteps_channel and not self.sound_manager.footsteps_channel.get_busy():
-                            self.sound_manager.footsteps_channel.play(self.sound_manager.footsteps_sound)
+                        if (
+                            self.sound_manager.footsteps_channel
+                            and not self.sound_manager.footsteps_channel.get_busy()
+                        ):
+                            self.sound_manager.footsteps_channel.play(
+                                self.sound_manager.footsteps_sound
+                            )
                             self.player.footsteps_timer = current_time
                 elif not self.player.is_moving and self.sound_manager.footsteps_channel:
                     self.sound_manager.footsteps_channel.stop()
@@ -446,7 +515,9 @@ class Game:
                 self.fight_boss()
                 self.screen_manager.draw_player_lives(self.player.lives)
             elif self.game_phase == CASTLE_TASKS:
-                self.screen_manager.draw_text("W zamku: Naciśnij U, aby ulepszyć broń", 10, 10)
+                self.screen_manager.draw_text(
+                    "W zamku: Naciśnij U, aby ulepszyć broń", 10, 10
+                )
             elif self.game_phase == GAME_OVER:
                 self.screen_manager.game_over_screen.draw()
                 self.sound_manager.stop_sound(self.sound_manager.footsteps_sound)
@@ -464,10 +535,11 @@ class Game:
         pygame.quit()
         sys.exit()
 
+
 def main():
     game = Game()
     game.run()
 
-    
+
 if __name__ == "__main__":
     main()
