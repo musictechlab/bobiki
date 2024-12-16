@@ -1,5 +1,4 @@
-# Bobiki: Zamek i Fortece
-
+# Bobik Fights With The Dragon 🐉
 Bobiki: A simple game built using Pygame. In this game, players control a character named Bobiki, who must defeat a dragon to win the game.
 
 ![Game Screenshot](screenshot.png)
