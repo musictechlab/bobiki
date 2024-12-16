@@ -15,7 +15,7 @@ Bobiki: A simple game built using Pygame. In this game, players control a charac
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/bobiki.git
+   git clone https://github.com/musictechlab/bobiki.git
    cd bobiki
    ```
 
