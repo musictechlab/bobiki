@@ -307,15 +307,6 @@ class Game:
         self.game_phase = WELCOME_SCREEN
         self.screen_manager = ScreenManager(self.screen, {'font': self.font, 'title_font': self.title_font}, {'castle_img': self.castle_img, 'heart_img': self.heart_img})
 
-    def draw_castle(self):
-        self.screen.blit(self.castle_img, (WIDTH // 2 - 100, HEIGHT // 2 - 200))
-        self.screen_manager.draw_text("Zamek: Kliknij, aby wejść", WIDTH // 2 - 100, HEIGHT // 2 - 230, with_frame=True)
-
-    def draw_fortresses(self):
-        for pos in [(200, 300), (400, 400), (600, 200)]:
-            self.screen.blit(self.fortress_img, pos)
-        self.screen_manager.draw_text("Fortece: Kliknij, aby walczyć", 10, 10, with_frame=True)
-
     def draw_enemies(self):
         for enemy in self.enemies:
             if enemy["type"] == "zombie":
@@ -348,9 +339,6 @@ class Game:
         if self.boss["health"] <= 0:
             self.screen_manager.draw_text("Pokonałeś bossa! Gratulacje!", WIDTH // 2 - 100, HEIGHT // 2 - 50)
             self.game_phase = "explore"
-
-    def upgrade_weapon(self):
-        pass
 
     def reset_game(self):
         self.player.health = 20
@@ -476,6 +464,10 @@ class Game:
         pygame.quit()
         sys.exit()
 
-if __name__ == "__main__":
+def main():
     game = Game()
     game.run()
+
+    
+if __name__ == "__main__":
+    main()
